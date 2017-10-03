@@ -39,8 +39,12 @@
 
 - name: install pip dependencies
   pip:
-    name: pytest-html
+    executable: pip3
+    name: "{{ item }}"
     state: latest
+  with_items:
+      - paramiko
+      - pytest-html
 
 - name: disable distro repositories
   shell: "dnf config-manager --set-disabled {{ item }}"
