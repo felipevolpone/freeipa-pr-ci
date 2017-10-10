@@ -230,3 +230,31 @@ class RunPytest(JobTask):
                 '--html=/vagrant/report.html'
                 ).format(test_suite=self.test_suite)],
                 timeout=None))
+
+
+class ToxTests(Build):
+    action_name = 'tox_test'
+
+    def __init__(self, template, timeout=constants.RUN_PYTEST_TIMEOUT,
+                 **kwargs):
+        super(RunPytest, self).__init__(template, timeout=timeout, **kwargs)
+
+    @with_vagrant
+    def _run(self):
+        try:
+            self.tox_tests()
+            logging.info('>>>>> TESTS PASSED <<<<<<')
+            self.returncode = 0
+        except TaskException as exc:
+            self.returncode = exc.task.returncode
+            if self.returncode == 1:
+                logging.error('>>>>>> TESTS FAILED <<<<<<')
+            else:
+                logging.error('>>>>>> PYTEST ERROR ({code}) <<<<<<'.format(
+                    code=self.returncode))
+
+    def tox_tests(self):
+        self.execute_subtask(
+            PopenTask(['vagrant', 'ssh', '-c', 'tox'],
+                      timeout=self.timeout))
+
