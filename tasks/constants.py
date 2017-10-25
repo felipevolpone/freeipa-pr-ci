@@ -19,8 +19,12 @@ RUNNER_LOG = 'runner.log'
 FREEIPA_PRCI_REPOFILE = 'freeipa-prci.repo'
 ANSIBLE_VARS_TEMPLATE = '{action_name}.vars.yml'
 VAGRANTFILE_TEMPLATE = 'Vagrantfile.{action_name}'
+VAGRANTFILE_TOPO_TEMPLATE = os.path.join('vagrantfiles', VAGRANTFILE_TEMPLATE)
 VAGRANT_IMAGE_PATH = '/root/.vagrant.d/boxes/{name}/{version}/{provider}/box.img'
 LIBVIRT_IMAGE_PATH = '/var/lib/libvirt/images/{libvirt_name}_{version}.img'
+
+# Topologies
+DEFAULT_TOPOLOGY = 'master_1repl'
 
 ANSIBLE_CFG_FILE = os.path.join(TEMPLATES_DIR, 'ansible.cfg')
 

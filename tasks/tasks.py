@@ -47,6 +47,24 @@ class JobTask(FallibleTask):
             logging.debug(exc, exc_info=True)
 
     def _before(self):
+        self._prepare_env_for_vagrant()
+        # Prepare files for vagrant
+
+        try:
+            shutil.copy(constants.ANSIBLE_CFG_FILE, self.data_dir)
+            create_file_from_template(
+                constants.VAGRANTFILE_TEMPLATE.format(
+                    action_name=self.action_name),
+                os.path.join(self.data_dir, 'Vagrantfile'),
+                dict(vagrant_template_name=self.template_name,
+                     vagrant_template_version=self.template_version))
+        except (OSError, IOError) as exc:
+            msg = "Failed to prepare job"
+            logging.critical(msg)
+            logging.debug(exc, exc_info=True)
+            raise TaskException(self, msg)
+
+    def _prepare_env_for_vagrant(self):
         # Create job dir
         try:
             os.makedirs(self.data_dir)
@@ -64,21 +82,6 @@ class JobTask(FallibleTask):
 
         # Create a hostname file for debugging purposes
         self.write_hostname_to_file()
-
-        # Prepare files for vagrant
-        try:
-            shutil.copy(constants.ANSIBLE_CFG_FILE, self.data_dir)
-            create_file_from_template(
-                constants.VAGRANTFILE_TEMPLATE.format(
-                    action_name=self.action_name),
-                os.path.join(self.data_dir, 'Vagrantfile'),
-                dict(vagrant_template_name=self.template_name,
-                     vagrant_template_version=self.template_version))
-        except (OSError, IOError) as exc:
-            msg = "Failed to prepare job"
-            logging.critical(msg)
-            logging.debug(exc, exc_info=True)
-            raise TaskException(self, msg)
 
     def _after(self):
         self.compress_logs()
@@ -185,27 +188,47 @@ class RunPytest(JobTask):
     action_name = 'run_pytest'
 
     def __init__(self, template, build_url, test_suite,
-                 timeout=constants.RUN_PYTEST_TIMEOUT, **kwargs):
+                 timeout=constants.RUN_PYTEST_TIMEOUT,
+                 topology=None, **kwargs):
         super(RunPytest, self).__init__(template, timeout=timeout, **kwargs)
         self.build_url = build_url + '/'
         self.test_suite = test_suite
 
+        if not topology:
+            topology = {'name': constants.DEFAULT_TOPOLOGY}
+
+        self.topology_name = topology.get('name')
+        self.topology_cpu = topology.get('cpu')
+        self.topology_memory = topology.get('memory')
+
     def _before(self):
-        super(RunPytest, self)._before()
+        self._prepare_env_for_vagrant()
 
         # Prepare test config files
         try:
-            create_file_from_template(
-                constants.ANSIBLE_VARS_TEMPLATE.format(
-                    action_name=self.action_name),
-                os.path.join(self.data_dir, 'vars.yml'),
-                dict(repofile_url=urllib.parse.urljoin(
-                        self.build_url, 'rpms/freeipa-prci.repo')))
+            self.__create_vagrantfile()
+
         except (OSError, IOError) as exc:
             msg = "Failed to prepare test config files"
             logging.debug(exc, exc_info=True)
             logging.critical(msg)
             raise exc
+
+    def __create_vagrantfile(self):
+        create_file_from_template(
+            constants.ANSIBLE_VARS_TEMPLATE.format(
+                action_name=self.action_name),
+            os.path.join(self.data_dir, 'vars.yml'),
+            dict(repofile_url=urllib.parse.urljoin(self.build_url,
+                                                   'rpms/freeipa-prci.repo')))
+
+        vagrantfile = constants.VAGRANTFILE_TOPO_TEMPLATE.format(
+            action_name=self.topology_name)
+
+        create_file_from_template(
+            vagrantfile, os.path.join(self.data_dir, 'Vagrantfile'),
+            dict(vagrant_template_name=self.template_name,
+                 vagrant_template_version=self.template_version))
 
     @with_vagrant
     def _run(self):
