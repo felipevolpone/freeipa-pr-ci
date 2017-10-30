@@ -279,6 +279,7 @@ def main():
             handler.register_task(task)
             task.execute()
         except Exception:
+            raise
             sentry_report_exception({
                 'module': 'github'})
             time.sleep(ERROR_BACKOFF_TIME)
