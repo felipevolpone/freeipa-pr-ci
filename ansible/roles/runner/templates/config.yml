@@ -17,7 +17,7 @@ logging:
             level: DEBUG
             formatter: basic
     root:
-        level: WARNING
+        level: DEBUG
         handlers: [console]
     loggers:
         __main__:

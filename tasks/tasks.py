@@ -13,6 +13,9 @@ from .remote_storage import GzipLogFiles, FedoraPeopleUpload
 from .vagrant import with_vagrant
 
 
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+
 class JobTask(FallibleTask):
     def __init__(self, template, no_destroy=False, publish_artifacts=True,
                  link_image=True, **kwargs):
@@ -120,10 +123,12 @@ class Build(JobTask):
         self.git_refspec = git_refspec
         self.git_version = git_version
         self.git_repo = git_repo
+        logger.debug('Build instantiated')
 
     @with_vagrant
     def _run(self):
         try:
+            logger.debug('Build will start')
             self.build()
             logging.info('>>>>>> BUILD PASSED <<<<<<')
             self.returncode = 0
@@ -189,6 +194,7 @@ class RunPytest(JobTask):
         super(RunPytest, self).__init__(template, timeout=timeout, **kwargs)
         self.build_url = build_url + '/'
         self.test_suite = test_suite
+        logger.debug('Task {} instantiated'.format(test_suite))
 
     def _before(self):
         super(RunPytest, self)._before()
@@ -210,6 +216,7 @@ class RunPytest(JobTask):
     @with_vagrant
     def _run(self):
         try:
+            logger.debug('Will start the tests')
             self.run_pytest()
             logging.info('>>>>> TESTS PASSED <<<<<<')
             self.returncode = 0

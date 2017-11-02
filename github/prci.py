@@ -273,6 +273,7 @@ def main():
             try:
                 task = next(task_queue)
             except StopIteration:
+                logger.debug('Will sleep for the next task')
                 time.sleep(no_task_backoff_time)
                 continue
 
