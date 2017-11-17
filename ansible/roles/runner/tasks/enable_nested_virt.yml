@@ -13,4 +13,5 @@
   modprobe:
     name: kvm_intel
     state: present
+    params: "nested=1"
   when: nested_virt_enabled.stdout == "N"
