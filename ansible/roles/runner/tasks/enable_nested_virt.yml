@@ -10,10 +10,7 @@
       changed_when: false
 
 - name: enable nested virtualization in kvm config
-  blockinfile:
-    dest: /etc/modprobe.d/kvm-intel.conf
-    create: yes
-    block: |
-      options kvm-intel nested=1
-  notify: reboot
+  modprobe:
+    name: kvm_intel
+    state: present
   when: nested_virt_enabled.stdout == "N"
