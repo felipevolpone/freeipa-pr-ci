@@ -16,6 +16,7 @@ import github3
 import redis
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from tasks import common
 from prci_github import TaskQueue, AbstractJob, JobResult
 from prci_github.adapter import GitHubAdapter
 
@@ -142,18 +143,7 @@ class JobDispatcher(AbstractJob):
 
 def create_parser():
     def config_file(path):
-        def load_yaml(yml_path):
-            try:
-                with open(yml_path) as yml_file:
-                    return yaml.load(yml_file)
-            except IOError as exc:
-                raise argparse.ArgumentTypeError(
-                    'Failed to open {}: {}'.format(yml_path, exc))
-            except yaml.YAMLError as exc:
-                raise argparse.ArgumentTypeError(
-                    'Failed to parse YAML from {}: {}'.format(yml_path, exc))
-
-        config = load_yaml(path)
+        config = common.load_yaml(path)
         try:
             config['credentials']
             config['repository']
@@ -170,7 +160,7 @@ def create_parser():
                            'be needed for all PRs.')
             config['whitelist'] = []
         else:
-            config['whitelist'] = load_yaml(whitelist_file)
+            config['whitelist'] = common.load_yaml(whitelist_file)
 
         return config
 

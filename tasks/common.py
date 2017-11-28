@@ -1,3 +1,5 @@
+import yaml
+import argparse
 import abc
 import collections
 import errno
@@ -180,6 +182,18 @@ class PopenTask(FallibleTask):
         else:
             cmd = self.cmd
         return 'Process "{cmd}"'.format(cmd=cmd)
+
+
+def load_yaml(yml_path):
+    try:
+        with open(yml_path) as yml_file:
+            return yaml.load(yml_file)
+    except IOError as exc:
+        raise argparse.ArgumentTypeError(
+            'Failed to open {}: {}'.format(yml_path, exc))
+    except yaml.YAMLError as exc:
+        raise argparse.ArgumentTypeError(
+            'Failed to parse YAML from {}: {}'.format(yml_path, exc))
 
 
 def logging_init_stream_handler(noout=False):
