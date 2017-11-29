@@ -18,6 +18,7 @@ DEFAULT_FILE_NAME = 'nightly_test.txt'
 DEFAULT_PR_TITLE = '[Nightly Test PR]'
 NEW_BRANCH_REF = 'refs/heads/'
 DEFAULT_COMMIT_MSG = 'File for Nightly Tests'
+FREEIPA_PRCI_CONFIG_NAME = '.freeipa-pr-ci.yaml'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -46,12 +47,33 @@ class NightlyTests(object):
 
         return branch_name
 
+    def __update_prci_config(self, new_prci_config, branch_name):
+        """
+        Updates the .freeipa-pr-ci.yaml file with the content
+        of the file provided.
+        """
+
+        prci_config_file = self.__repo.file_contents(FREEIPA_PRCI_CONFIG_NAME)
+
+        content = ''
+        with open(new_prci_config, 'r') as f:
+            content = ' '.join(f.readlines())
+
+        prci_config_file.update(DEFAULT_COMMIT_MSG, content.encode(),
+                                branch_name)
+
     def open_pr(self, args):
         # a branch is created and a commit is done in order to use them
         # to create a new PR. The content of the commit doesn't matter
         branch_name = self.__create_branch()
-        self.__repo.create_file(DEFAULT_FILE_NAME, DEFAULT_COMMIT_MSG,
-                                branch_name.encode(), branch_name)
+
+        # if a path to a new config file is provided, then it changes the
+        # content and commit it. otherwise, it will create an empty file
+        if args.prci_config:
+            self.__update_prci_config(args.prci_config, branch_name)
+        else:
+            self.__repo.create_file(DEFAULT_FILE_NAME, DEFAULT_COMMIT_MSG,
+                                    branch_name.encode(), branch_name)
 
         pr_title = '{} {}'.format(DEFAULT_PR_TITLE, branch_name)
 
@@ -97,6 +119,11 @@ def create_parser():
     parser.add_argument(
         '--config', type=config_file, required=True,
         help='YAML file with complete configuration.',
+    )
+
+    parser.add_argument(
+        '--prci_config', type=str, required=False,
+        help='An easy way to override the .freeipa-pr-ci.yml file'
     )
 
     return parser
