@@ -1,0 +1,14 @@
+---
+- hosts: scheduler_runner
+  remote_user: root
+  name: deploy scripts scheduler
+  vars:
+    config_file: /root/.config/freeipa-pr-ci/config.yml
+  tasks:
+    - cron:
+        name: "setup cronjob to run scripts"
+        minute: "0"
+        hour: "22"
+        job: "python3 /root/freeipa-pr-ci/github/open_close_pr.py --config {{ config_file }} open_pr"
+        user: root
+
