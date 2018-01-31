@@ -40,6 +40,9 @@ class Status(object):
     def create(cls, repo, pull, context, description, target_url, state):
         sha = repo.commit(pull.pull.head.sha).sha
         repo.create_status(sha, state, target_url, description, context)
+        # sometimes, when creating a lot of tasks at the same time, we could
+        # reach the API rate limit
+        time.sleep(1)
 
         last_err = RuntimeError()
         for _ in range(CREATE_TIMEOUT):
