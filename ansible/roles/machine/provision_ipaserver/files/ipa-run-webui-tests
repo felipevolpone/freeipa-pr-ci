@@ -4,8 +4,14 @@ trap 'kill $(jobs -p)' EXIT
 
 export PATH=$PATH:/opt
 export DISPLAY=:99
+export IPATESTS_PATH = /usr/lib/python3.6/site-packages/ipatests
+
 /usr/bin/Xvfb $DISPLAY -ac -noreset -screen 0 1400x1200x8 > /dev/null &
 java -jar /opt/selenium.jar &
-IPATEST_YAML_CONFIG=/vagrant/ipa-test-config.yaml ipa-run-tests-3 "$@"
+
+pushd $IPATESTS_PATH
+tests_to_run=`ls -d -1 "$@" 2> /dev/null | tr '\n' ' '`
+IPATEST_YAML_CONFIG=/vagrant/ipa-test-config.yaml ipa-run-tests-3 $tests_to_run
+popd
 
 exit 0
