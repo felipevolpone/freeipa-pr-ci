@@ -1,0 +1,30 @@
+---
+- hosts: forest,root
+  name: configure firewall, dns and install AD services
+  gather_facts: no
+  roles:
+    - win-dnsclient
+    - win-common
+
+- hosts: forest
+  gather_facts: no
+  name: Install and configure ADDSForest
+  roles:
+     - win-forest
+     - win-reboot
+
+- hosts: root
+  gather_facts: no
+  name: Install AD Domain on root
+  roles:
+     - win-rootdomain
+     - win-reboot
+ 
+# not sure if a child domain is needed
+# if it is, Vagrant.ad should be updated to create it
+- hosts: child
+  gather_facts: no
+  name: Install AD Domain on child
+  roles:
+     - win-domain
+     - win-reboot

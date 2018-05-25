@@ -1,0 +1,99 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+BOX_AD  = "peru/windows-server-2016-standard-x64-eval"
+
+Vagrant.configure("2") do |config|
+
+  config.ssh.username = "root"
+  config.vm.synced_folder "./", "/vagrant", type: "nfs", nfs_udp: false
+
+  config.vm.box = "freeipa/ci-master-f27"
+  config.vm.box_version = "1.0.4"
+
+  config.vm.provider "libvirt" do |domain, override|
+    # Defaults for masters and replica
+    # WARNING: Do not overcommit CPUs, it causes issues during
+    # provisioning, when RPMs are installed
+    domain.cpus = 1
+    domain.memory = 1200
+
+    # Nested virtualization options
+    domain.nested = true
+    domain.cpu_mode = "host-passthrough"
+
+    # Disable graphics
+    domain.graphics_type = "none"
+
+    # Recommended for remote NFS storage
+    domain.volume_cache = "none"
+  end
+
+  config.vm.define "controller" , primary: true do |controller|
+    controller.vm.provider "libvirt" do |domain,override|
+      # Less resources needed for controller
+      domain.memory = 950
+    end
+
+    controller.vm.provision :ansible do |ansible|
+      # Disable default limit to connect to all the machines
+      ansible.limit = "all"
+      ansible.playbook = "../../ansible/provision.yml"
+      ansible.extra_vars = "vars.yml"
+    end
+  end
+
+  config.vm.define "master"  do |master|
+    master.vm.provision :ansible do |ansible|
+      # Disable default limit to connect to all the machines
+      ansible.limit = "all"
+      ansible.playbook = "../../ansible/provision.yml"
+      ansible.extra_vars = "vars.yml"
+    end
+  end
+
+  config.vm.define "root" do |ad_root|
+    ad_root.vm.box = BOX_AD
+    ad_root.vm.box_version = nil
+    ad_root.vm.guest = :windows
+    ad_root.vm.communicator = "winrm"
+
+    windows_settings = {
+      "ansible_winrm_server_cert_validation" => "ignore",
+      "ansible_winrm_read_timeout_sec" => 70,
+      "ansible_winrm_operation_timeout_sec" => 60,
+    }
+
+    config.vm.provision :ansible do |ansible|
+      ansible.playbook = "../../ansible/ad_ping.yml"
+      ansible.host_vars = {
+        "root"   => windows_settings,
+        "forest" => windows_settings,
+      }
+    end
+  end
+
+  config.vm.define "forest" do |ad_root|
+    ad_root.vm.box = BOX_AD
+    ad_root.vm.box_version = nil
+    ad_root.vm.guest = :windows
+    ad_root.vm.communicator = "winrm"
+
+    windows_settings = {
+      "ansible_winrm_server_cert_validation" => "ignore",
+      "ansible_winrm_read_timeout_sec" => 70,
+      "ansible_winrm_operation_timeout_sec" => 60,
+    }
+
+    config.vm.provision :ansible do |ansible|
+        ansible.playbook = "../../ansible/ad_ping.yml"
+      ansible.host_vars = {
+        "root"   => windows_settings,
+        "forest" => windows_settings,
+      }
+    end
+  end
+
+end
+
+Vagrant::DEFAULT_SERVER_URL.replace('https://vagrantcloud.com')

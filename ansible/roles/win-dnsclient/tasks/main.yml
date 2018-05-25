@@ -1,0 +1,7 @@
+- debug: var=hostvars['forest']['ansible_host']
+
+- name: Setup DNS
+  win_dns_client:
+    adapter_names: "*"
+    ipv4_addresses:
+    - "{{ hostvars['forest']['ansible_host'] }}"

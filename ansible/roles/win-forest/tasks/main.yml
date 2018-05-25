@@ -1,0 +1,20 @@
+- name: 'Install dependencies'
+  win_shell: Install-windowsfeature -name AD-Domain-Services –IncludeManagementTools
+
+- name: 'Create new AD forest ad.vm'
+  win_shell: |
+    Import-Module ADDSDeployment
+
+    Install-ADDSForest                                                        \
+      -DomainName "ad.vm"                                                     \
+      -CreateDnsDelegation:$false                                             \
+      -DomainNetbiosName "AD"                                                 \
+      -ForestMode "WinThreshold"                                                 \
+      -DomainMode "WinThreshold"                                                 \
+      -Force:$true                                                            \
+      -InstallDns:$true                                                       \
+      -NoRebootOnCompletion:$true                                             \
+      -SafeModeAdministratorPassword                                          \
+        (ConvertTo-SecureString 'Secret123' -AsPlainText -Force)
+  args:
+    creates: 'C:\Windows\NTDS'

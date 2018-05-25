@@ -10,7 +10,7 @@ from .common import (FallibleTask, TaskException, PopenTask,
                      logging_init_file_handler, create_file_from_template)
 from . import constants
 from .remote_storage import GzipLogFiles, FedoraPeopleUpload
-from .vagrant import with_vagrant
+from .vagrant import with_vagrant, with_vagrant_ad
 
 
 class JobTask(FallibleTask):
@@ -226,7 +226,7 @@ class RunPytest(JobTask):
             logging.critical(msg)
             raise exc
 
-    @with_vagrant
+    @with_vagrant_ad
     def _run(self):
         try:
             self.execute_tests()
