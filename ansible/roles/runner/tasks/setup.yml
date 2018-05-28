@@ -15,7 +15,7 @@
     name: "{{ item }}"
     state: present
   with_items:
-    - vagrant
+    - https://releases.hashicorp.com/vagrant/2.0.0/vagrant_2.0.0_x86_64.rpm
     - vagrant-libvirt
     - libguestfs-tools-c  # required for vagrant package command
     - ansible  # TODO requires >= 2.3 
@@ -39,8 +39,37 @@
     - python3-tqdm
     - python3-pytz
     - python3-jinja2
+
+    # needed for AD tests
+    - python3-winrm
+    - python2-winrm
   notify:
     - restart_nfs
+
+# all this is because vagrant 2.x is needed and I was testing using f26
+# f27 provides vagrant 2.x by default
+- name: install libvirt for vagrant 2.x
+  raw: dnf -y install libvirt-devel ruby-devel
+
+- name: install libvirt plugin for vagrant
+  raw: vagrant plugin install vagrant-libvirt
+  ignore_errors: yes
+  # if the plugin is already installed it may raise error
+
+- name: install vagrant plugin (winrm) for AD tests
+  raw: vagrant plugin install winrm
+  ignore_errors: yes
+  # if the plugin is already installed it may raise error
+
+- name: install vagrant plugins (winrm-fs) for AD tests
+  raw: vagrant plugin install winrm-fs
+  ignore_errors: yes
+  # if the plugin is already installed it may raise error
+
+- name: install vagrant plugins (winrm-elevated) for AD tests
+  raw: vagrant plugin install winrm-elevated
+  ignore_errors: yes
+  # if the plugin is already installed it may raise error
 
 - name: start&enable nfs
   service:
